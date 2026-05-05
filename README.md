@@ -202,3 +202,4 @@ Issues and PRs welcome. Particular areas where help is appreciated:
 - HA blueprint version of the automation
 - Selectors for non-US Amazon locales (the regex assumes English month names)
 - A "mark as already returned" mechanism so the urgent list filters correctly
+- Issues responded to as time permits
