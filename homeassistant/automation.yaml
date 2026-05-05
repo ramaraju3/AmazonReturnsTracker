@@ -1,0 +1,31 @@
+# Daily Amazon Returns notification.
+# Replace notify.mobile_app_YOUR_IPHONE with the service for your device
+# (find in Developer Tools -> Actions -> search "notify.mobile_app").
+
+alias: Amazon Returns - Daily check
+description: Notify if any items are within the urgent return window
+mode: single
+triggers:
+  - trigger: time
+    at: "10:30:00"
+conditions:
+  - condition: numeric_state
+    entity_id: sensor.amazon_returns_urgent
+    above: 0
+actions:
+  - action: notify.mobile_app_YOUR_IPHONE
+    data:
+      title: >-
+        Amazon: {{ states('sensor.amazon_returns_urgent') }} return(s) due soon
+      message: |-
+        {% set items = state_attr('sensor.amazon_returns_urgent', 'urgent_items') %}
+        {% if items and items | length > 0 %}
+        {% for item in items %}• {{ item.days_left }}d left: {{ item.title[:60] }}
+        {% endfor %}
+        {% else %}No urgent returns right now.
+        {% endif %}
+      data:
+        push:
+          interruption-level: time-sensitive
+        url: "https://www.amazon.com/gp/your-account/order-history"
+        group: "amazon-returns"

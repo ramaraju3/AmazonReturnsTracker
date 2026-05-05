@@ -1,0 +1,13 @@
+[Unit]
+Description=Amazon Returns Checker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=CHANGE_ME
+WorkingDirectory=/home/CHANGE_ME/amazon-returns
+ExecStart=/home/CHANGE_ME/amazon-returns/venv/bin/python /home/CHANGE_ME/amazon-returns/scripts/amazon_returns_pi.py
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=300

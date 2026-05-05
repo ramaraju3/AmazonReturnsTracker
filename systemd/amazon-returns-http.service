@@ -1,0 +1,15 @@
+[Unit]
+Description=Amazon Returns JSON HTTP server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=CHANGE_ME
+WorkingDirectory=/home/CHANGE_ME/amazon-returns
+ExecStart=/usr/bin/python3 -m http.server 8765 --bind 0.0.0.0
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

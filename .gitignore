@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+.Python
+
+# Editor directories
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Playwright
+playwright-report/
+
+# Home Assistant
+.homeassistant/

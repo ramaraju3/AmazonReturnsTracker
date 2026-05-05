@@ -1,0 +1,29 @@
+# Markdown card for the Lovelace dashboard.
+# Add via: Edit Dashboard -> + Add Card -> Markdown -> paste contents below.
+
+type: markdown
+title: Amazon Returns
+content: |
+  {% set urgent = state_attr('sensor.amazon_returns_urgent', 'urgent_items') %}
+  {% set all_items = state_attr('sensor.amazon_returns_urgent', 'all_items') %}
+  {% set updated = state_attr('sensor.amazon_returns_urgent', 'updated_at') %}
+
+  {% if urgent and urgent | length > 0 %}
+  ## ⚠️ Due soon
+  {% for item in urgent %}
+  - **{{ item.days_left }}d left** — {{ item.title[:80] }}
+  {% endfor %}
+
+  ---
+  {% endif %}
+
+  ### Returnable items ({{ all_items | length if all_items else 0 }})
+  {% if all_items %}
+  {% for item in all_items %}
+  - **{{ item.days_left }}d** — {{ item.title[:70] }}
+  {% endfor %}
+  {% else %}
+  *None.*
+  {% endif %}
+
+  *Updated {{ updated or 'never' }}*
