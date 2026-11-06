@@ -153,3 +153,9 @@ def test_build_items_normalizes_fancy_unicode_titles():
     hits = [{"title": "𝟐𝟎𝟐𝟔 𝐔𝐩𝐠𝐫𝐚𝐝𝐞𝐝 Charger", "date_text": "November 10, 2026", "order_id": "1"}]
     items = ar.build_items(hits, today=date(2026, 11, 5))
     assert items[0]["title"] == "2026 Upgraded Charger"
+
+
+def test_is_bot_check():
+    assert ar.is_bot_check("<span>Check the box to continue.</span><label>I am human</label>")
+    assert ar.is_bot_check('<form action="/errors/validateCaptcha">')
+    assert not ar.is_bot_check(FIXTURE.read_text())

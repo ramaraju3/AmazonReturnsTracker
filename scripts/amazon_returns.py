@@ -249,6 +249,20 @@ class LoginRequired(Exception):
     pass
 
 
+class BotCheck(Exception):
+    pass
+
+
+BOT_CHECK_MARKERS = ("i am human", "check the box to continue",
+                     "enter the characters you see below", "validatecaptcha")
+
+
+def is_bot_check(html):
+    """Amazon's "are you a robot" page, shown when it sees too many visits."""
+    low = html.lower()
+    return any(m in low for m in BOT_CHECK_MARKERS)
+
+
 def is_signin_page(page):
     if SIGNIN_URL_RE.search(page.url):
         return True
@@ -408,6 +422,12 @@ def scrape(args):
                     page.wait_for_timeout(500)
 
                 result = page.evaluate(EXTRACTION_JS)
+                if not result["orderIds"] and is_bot_check(page.content()):
+                    save_debug(page, debug_dir, "bot-check")
+                    raise BotCheck(
+                        "Amazon showed an \"I am human\" check instead of your orders, "
+                        "usually after many visits in a short time. Keeping the last "
+                        "good data; the next daily run will try again.")
                 pages += 1
                 new_orders = set(result["orderIds"]) - seen_orders
                 log(f"  {len(result['hits'])} returnable entries, {len(result['orderIds'])} orders on page")
@@ -467,6 +487,10 @@ def main(argv=None):
         items = build_items(hits)
         output = build_output("ok", items, args.threshold, pages=pages)
         code = 0
+    except BotCheck as e:
+        log(f"ERROR: {e}")
+        output = build_output("error", [], args.threshold, error=str(e), previous=previous)
+        code = 3
     except LoginRequired as e:
         log(f"ERROR: {e}")
         output = build_output("login_required", [], args.threshold, error=str(e), previous=previous)
