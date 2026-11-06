@@ -6,7 +6,7 @@ A small system that scrapes your Amazon order history daily and surfaces items w
 
 ## What it does
 
-- Daily scrape (default 9 AM) of your Amazon orders (all pages from the last 3 months) using Brave Browser driven by Playwright (in a normal window on the desktop; see step 4)
+- Daily scrape (default 10 AM) of your Amazon orders (all pages from the last 3 months) using Brave Browser driven by Playwright (in a normal window on the desktop; see step 4)
 - Writes `data/returns.json`: every returnable item with its title, return-by date, days remaining, order ID and order link, plus a `status` field (`ok`, `login_required` or `error`)
 - Serves **only** the `data/` folder over HTTP on the local network
 - Home Assistant pulls it via REST sensor every 5 minutes
@@ -185,7 +185,7 @@ Brave is used for everything, including `--login`, so no other browser should op
 
 | Setting | Default | Where |
 |---|---|---|
-| Scrape time | 09:00 daily | `systemd/amazon-returns.timer` |
+| Scrape time | 10:00 daily | `systemd/amazon-returns.timer` |
 | Notification time | 10:30 daily | `homeassistant/automation.yaml` |
 | Urgent threshold | 2 days | `--threshold` or `AMAZON_RETURNS_THRESHOLD` |
 | How far back | last 3 months | `--lookback` (`last30`, `months-3`, `year-2026`) |
