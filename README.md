@@ -6,7 +6,7 @@ A small system that scrapes your Amazon order history daily and surfaces items w
 
 ## What it does
 
-- Daily scrape (default 9 AM) of your Amazon orders (all pages from the last 3 months) using Brave Browser (headless) driven by Playwright
+- Daily scrape (default 9 AM) of your Amazon orders (all pages from the last 3 months) using Brave Browser driven by Playwright (in a normal window on the desktop; see step 4)
 - Writes `data/returns.json`: every returnable item with its title, return-by date, days remaining, order ID and order link, plus a `status` field (`ok`, `login_required` or `error`)
 - Serves **only** the `data/` folder over HTTP on the local network
 - Home Assistant pulls it via REST sensor every 5 minutes
@@ -15,16 +15,16 @@ A small system that scrapes your Amazon order history daily and surfaces items w
 ## Architecture
 
 ```
-+----------------------+        +------------------------+
-|  Scraper Pi          |        |  Home Assistant Pi     |
-|  (Raspberry Pi OS)   |        |  (HA OS / Container)   |
-|                      |        |                        |
-|  Playwright + headless Brave  |  REST sensor polls     |
-|  scrapes daily                |  http://scraper:8765   |
-|  -> data/returns.json         |  -> Lovelace card      |
-|  -> http.server serving       |  -> 10:30 automation   |
-|     data/ on :8765            |     -> iOS push        |
-+----------------------+        +------------------------+
++--------------------------+        +------------------------+
+|  Scraper Pi              |        |  Home Assistant Pi     |
+|  (Raspberry Pi OS)       |        |  (HA OS / Container)   |
+|                          |        |                        |
+|  Playwright + Brave      |        |  REST sensor polls     |
+|  scrapes daily           |        |  http://scraper:8765   |
+|  -> data/returns.json    |        |  -> Lovelace card      |
+|  -> http.server serving  |        |  -> 10:30 automation   |
+|     data/ on :8765       |        |     -> iOS push        |
++--------------------------+        +------------------------+
         ^                                  |
         +----------- LAN HTTP -------------+
 ```
@@ -105,6 +105,8 @@ head -20 data/returns.json
 You should see `"status": "ok"` and your order data. If `total_returnable` is 0 but you have returnable items, see [Troubleshooting](#troubleshooting).
 
 ### 4. Daily scheduling (systemd)
+
+The daily run opens Brave in a normal window on the Pi's desktop for about a minute, then closes it. It doesn't run hidden ("headless"): when Amazon sees a hidden Brave it asks for the password again, even right after you signed in. So keep the Pi's desktop logged in (the Pi OS default auto-login is fine). If the desktop isn't running, the run fails and Home Assistant shows an error.
 
 Copy the unit files, edit paths to match your install, and enable:
 

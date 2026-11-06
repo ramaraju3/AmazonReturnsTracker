@@ -7,7 +7,13 @@ Wants=network-online.target
 Type=oneshot
 User=CHANGE_ME
 WorkingDirectory=/home/CHANGE_ME/amazon-returns
-ExecStart=/home/CHANGE_ME/amazon-returns/venv/bin/python /home/CHANGE_ME/amazon-returns/scripts/amazon_returns.py
+# Brave runs in a normal window on the desktop (--headed). Amazon asks for the
+# password again when it sees a hidden ("headless") Brave, so the desktop must
+# be logged in. 1000 is the user's id: check it with `id -u`.
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=DISPLAY=:0
+ExecStart=/home/CHANGE_ME/amazon-returns/venv/bin/python /home/CHANGE_ME/amazon-returns/scripts/amazon_returns.py --headed
 # Exit code 2 = Amazon login expired. The unit shows as failed and
 # returns.json gets status "login_required", so Home Assistant can alert you.
 StandardOutput=journal
