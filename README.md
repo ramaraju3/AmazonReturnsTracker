@@ -82,7 +82,7 @@ A Brave window opens. Log into Amazon (including any 2-step verification code). 
 
 Tip: tick **Keep me signed in** on the Amazon sign-in page so the session lasts longer.
 
-**On a Pi without a monitor:** run `--login` from the Pi's desktop (Pi Connect / VNC), or sign in on another machine and copy the `amazon_session/` folder across. Both use Brave, so the session carries over.
+**On a Pi without a monitor:** run `--login` from the Pi's desktop (Pi Connect / VNC). Don't copy `amazon_session/` over from a Mac: Brave on macOS encrypts cookies with the Mac Keychain, so a Linux Brave can't read them and you'd have to sign in again anyway.
 
 **On Wayland (Pi OS Trixie+):** if the browser fails to open with `Missing X server or $DISPLAY`, install `xwayland` and authorize the local user:
 
