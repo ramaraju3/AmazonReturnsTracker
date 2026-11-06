@@ -1,6 +1,5 @@
 [Unit]
 Description=Run Amazon Returns Checker daily at 9 AM
-Requires=amazon-returns.service
 
 [Timer]
 OnCalendar=*-*-* 09:00:00

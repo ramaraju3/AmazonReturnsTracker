@@ -114,3 +114,36 @@ def test_extraction_reports_orders_and_pagination(extracted):
 def test_find_brave_explicit_missing():
     with pytest.raises(FileNotFoundError):
         ar.find_brave("/nope/brave")
+
+
+def test_profile_lock_blocks_second_run(tmp_path):
+    import threading
+    order = []
+    with ar.profile_lock(tmp_path):
+        def second():
+            with ar.profile_lock(tmp_path, wait_s=10):
+                order.append("second")
+        t = threading.Thread(target=second)
+        t.start()
+        t.join(0.5)
+        order.append("first-done")   # second must still be waiting here
+    t.join(10)
+    assert order == ["first-done", "second"]
+
+
+def test_profile_lock_gives_up(tmp_path):
+    import threading
+    hold, release = threading.Event(), threading.Event()
+
+    def holder():
+        with ar.profile_lock(tmp_path):
+            hold.set()
+            release.wait(10)
+    t = threading.Thread(target=holder)
+    t.start()
+    hold.wait(5)
+    with pytest.raises(RuntimeError, match="Brave profile"):
+        with ar.profile_lock(tmp_path, wait_s=0):
+            pass
+    release.set()
+    t.join(5)

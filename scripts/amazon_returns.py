@@ -21,6 +21,8 @@ Assistant can tell "nothing to return" apart from "the scraper is broken".
 """
 
 import argparse
+import contextlib
+import fcntl
 import json
 import os
 import re
@@ -323,6 +325,36 @@ def find_brave(explicit=None):
         "or pass --browser-path / set AMAZON_RETURNS_BROWSER.")
 
 
+@contextlib.contextmanager
+def profile_lock(session_dir, wait_s=600):
+    """Only one run at a time may use the Brave profile.
+
+    Two Braves on one profile makes the second launch hang until it times
+    out, so a second run (e.g. the timer firing during a manual run) waits
+    for the first to finish instead.
+    """
+    with open(session_dir / ".run.lock", "w") as fh:
+        deadline = time.monotonic() + wait_s
+        announced = False
+        while True:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() > deadline:
+                    raise RuntimeError(
+                        f"Another run has been using the Brave profile for over "
+                        f"{wait_s // 60} minutes. Is a --login window still open?")
+                if not announced:
+                    log("Another run is using the Brave profile; waiting for it to finish...")
+                    announced = True
+                time.sleep(2)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+
+
 def scrape(args):
     from playwright.sync_api import sync_playwright
 
@@ -343,7 +375,7 @@ def scrape(args):
     log(f"Using browser: {launch['executable_path']}")
 
     all_hits, seen_orders, pages = [], set(), 0
-    with sync_playwright() as p:
+    with profile_lock(args.session_dir), sync_playwright() as p:
         ctx = p.chromium.launch_persistent_context(**launch)
         try:
             page = ctx.pages[0] if ctx.pages else ctx.new_page()
