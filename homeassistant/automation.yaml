@@ -64,10 +64,10 @@
         title: Amazon Returns tracker needs attention
         message: |-
           {% set s = states('sensor.amazon_returns_status') %}
-          {% if s == 'login_required' %}Amazon login expired. On the scraper run:
+          {% if s == 'login_required' %}Amazon sign-in expired. On the scraper's desktop run:
           python scripts/amazon_returns.py --login
           {% elif s == 'unavailable' %}Can't reach the scraper's HTTP server.
-          {% elif s == 'error' %}Scraper error: {{ state_attr('sensor.amazon_returns_status', 'error') }}
+          {% elif s == 'error' %}{{ state_attr('sensor.amazon_returns_status', 'error') }}
           {% else %}No successful scrape since {{ state_attr('sensor.amazon_returns_status', 'last_success') or 'ever' }}.
           {% endif %}
         data:
