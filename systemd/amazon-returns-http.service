@@ -6,8 +6,10 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=CHANGE_ME
-WorkingDirectory=/home/CHANGE_ME/amazon-returns
-ExecStart=/usr/bin/python3 -m http.server 8765 --bind 0.0.0.0
+# Serve ONLY the data/ folder. Never serve the project root: amazon_session/
+# holds your Amazon login cookies.
+ExecStartPre=/bin/mkdir -p /home/CHANGE_ME/amazon-returns/data
+ExecStart=/usr/bin/python3 -m http.server 8765 --bind 0.0.0.0 --directory /home/CHANGE_ME/amazon-returns/data
 Restart=on-failure
 RestartSec=10
 

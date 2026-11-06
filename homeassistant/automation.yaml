@@ -1,31 +1,74 @@
-# Daily Amazon Returns notification.
-# Replace notify.mobile_app_YOUR_IPHONE with the service for your device
-# (find in Developer Tools -> Actions -> search "notify.mobile_app").
+# Amazon Returns automations. Paste both into automations.yaml (or create
+# them in the UI via "Edit in YAML").
+# Replace notify.mobile_app_YOUR_IPHONE with your device's notify action
+# (Developer Tools -> Actions -> search "notify.mobile_app").
 
-alias: Amazon Returns - Daily check
-description: Notify if any items are within the urgent return window
-mode: single
-triggers:
-  - trigger: time
-    at: "10:30:00"
-conditions:
-  - condition: numeric_state
-    entity_id: sensor.amazon_returns_urgent
-    above: 0
-actions:
-  - action: notify.mobile_app_YOUR_IPHONE
-    data:
-      title: >-
-        Amazon: {{ states('sensor.amazon_returns_urgent') }} return(s) due soon
-      message: |-
-        {% set items = state_attr('sensor.amazon_returns_urgent', 'urgent_items') %}
-        {% if items and items | length > 0 %}
-        {% for item in items %}• {{ item.days_left }}d left: {{ item.title[:60] }}
-        {% endfor %}
-        {% else %}No urgent returns right now.
-        {% endif %}
+- id: amazon_returns_daily
+  alias: Amazon Returns - Daily check
+  description: Notify if any items are within the urgent return window
+  mode: single
+  triggers:
+    - trigger: time
+      at: "10:30:00"
+  conditions:
+    - condition: numeric_state
+      entity_id: sensor.amazon_returns_urgent
+      above: 0
+  actions:
+    - action: notify.mobile_app_YOUR_IPHONE
       data:
-        push:
-          interruption-level: time-sensitive
-        url: "https://www.amazon.com/gp/your-account/order-history"
-        group: "amazon-returns"
+        title: >-
+          Amazon: {{ states('sensor.amazon_returns_urgent') }} return(s) due soon
+        message: |-
+          {% set items = state_attr('sensor.amazon_returns_urgent', 'urgent_items') or [] %}
+          {% for item in items -%}
+          • {{ 'TODAY' if item.days_left == 0 else item.days_left ~ 'd left' }}: {{ item.title[:60] }}
+          {% endfor %}
+          {%- if items | length == 0 %}Open the dashboard for details.{% endif %}
+        data:
+          push:
+            interruption-level: time-sensitive
+          url: "https://www.amazon.com/your-orders/orders"
+          group: "amazon-returns"
+
+- id: amazon_returns_scraper_problem
+  alias: Amazon Returns - Scraper needs attention
+  description: >-
+    Alert when the Amazon login expired, the scraper errored, or the data
+    hasn't been refreshed in over a day.
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: sensor.amazon_returns_status
+      to:
+        - login_required
+        - error
+      for: "00:05:00"
+    - trigger: state
+      entity_id: sensor.amazon_returns_status
+      to: unavailable
+      for: "06:00:00"
+    - trigger: time
+      at: "10:35:00"
+  conditions:
+    - condition: template
+      value_template: >-
+        {% set s = states('sensor.amazon_returns_status') %}
+        {% set last = state_attr('sensor.amazon_returns_status', 'last_success') %}
+        {{ s != 'ok'
+           or last is none
+           or (now() - as_datetime(last)) > timedelta(hours=26) }}
+  actions:
+    - action: notify.mobile_app_YOUR_IPHONE
+      data:
+        title: Amazon Returns tracker needs attention
+        message: |-
+          {% set s = states('sensor.amazon_returns_status') %}
+          {% if s == 'login_required' %}Amazon login expired. On the scraper run:
+          python scripts/amazon_returns.py --login
+          {% elif s == 'unavailable' %}Can't reach the scraper's HTTP server.
+          {% elif s == 'error' %}Scraper error: {{ state_attr('sensor.amazon_returns_status', 'error') }}
+          {% else %}No successful scrape since {{ state_attr('sensor.amazon_returns_status', 'last_success') or 'ever' }}.
+          {% endif %}
+        data:
+          group: "amazon-returns"

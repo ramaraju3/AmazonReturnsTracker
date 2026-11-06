@@ -7,7 +7,9 @@ Wants=network-online.target
 Type=oneshot
 User=CHANGE_ME
 WorkingDirectory=/home/CHANGE_ME/amazon-returns
-ExecStart=/home/CHANGE_ME/amazon-returns/venv/bin/python /home/CHANGE_ME/amazon-returns/scripts/amazon_returns_pi.py
+ExecStart=/home/CHANGE_ME/amazon-returns/venv/bin/python /home/CHANGE_ME/amazon-returns/scripts/amazon_returns.py
+# Exit code 2 = Amazon login expired. The unit shows as failed and
+# returns.json gets status "login_required", so Home Assistant can alert you.
 StandardOutput=journal
 StandardError=journal
-TimeoutStartSec=300
+TimeoutStartSec=600

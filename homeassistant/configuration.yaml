@@ -1,19 +1,42 @@
-# Amazon Returns — REST sensor
+# Amazon Returns — REST sensors
 # Add to your existing configuration.yaml. Replace SCRAPER_IP with your scraper host's LAN IP.
+# Check the URL works first:  curl http://SCRAPER_IP:8765/returns.json
 
 rest:
   - resource: "http://SCRAPER_IP:8765/returns.json"
     scan_interval: 300
+    timeout: 15
     sensor:
       - name: "Amazon Returns Urgent"
         unique_id: amazon_returns_urgent
-        value_template: "{{ value_json.urgent_count }}"
+        value_template: "{{ value_json.urgent_count | int(0) }}"
+        state_class: measurement
         json_attributes:
           - updated_at
           - urgent_count
           - total_returnable
+          - next_deadline
           - urgent_items
           - all_items
       - name: "Amazon Returns Total"
         unique_id: amazon_returns_total
-        value_template: "{{ value_json.total_returnable }}"
+        value_template: "{{ value_json.total_returnable | int(0) }}"
+        state_class: measurement
+      # ok | login_required | error
+      - name: "Amazon Returns Status"
+        unique_id: amazon_returns_status
+        value_template: "{{ value_json.status | default('ok') }}"
+        json_attributes:
+          - error
+          - stale
+          - updated_at
+          - last_success
+          - pages_scanned
+
+# The item lists can exceed 16 KB, which HA refuses to store in its history
+# database (it logs a warning). They aren't needed in history, so exclude them.
+# If you already have a recorder: block, add the entity to it instead.
+recorder:
+  exclude:
+    entities:
+      - sensor.amazon_returns_urgent

@@ -23,3 +23,8 @@ playwright-report/
 
 # Home Assistant
 .homeassistant/
+
+# Amazon session cookies and scraped data: never commit these
+amazon_session/
+data/
+returns.json

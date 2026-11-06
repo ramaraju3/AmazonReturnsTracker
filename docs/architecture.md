@@ -8,9 +8,9 @@ Amazon does not expose return-window dates through any of its public or partner 
 
 Earlier versions of this script targeted CSS selectors like `.order-card` and `.yohtmlc-product-title`. These break every few months when Amazon changes their layout.
 
-The current approach (`EXTRACTION_JS` in `amazon_returns_pi.py`) walks the DOM's text nodes, regex-matches lines containing "Eligible through DATE", and then climbs the parent chain to find the nearest item title and order ID. This survives most layout changes — the only thing that would break it is Amazon removing the words "Eligible through" entirely.
+The current approach (`EXTRACTION_JS` in `scripts/amazon_returns.py`) finds text containing "Eligible through DATE" (including when the date sits in its own tag), climbs the parent chain to the nearest box that holds product links, and records every product title in that box. It climbs further, separately, to find the order ID. Picture links and "Buy it again" links are ignored. `tests/fixtures/orders_page.html` is a simplified orders page used to test this. This survives most layout changes — the only thing that would break it is Amazon removing the words "Eligible through" entirely.
 
-## Why headless Chromium and not `requests`?
+## Why a headless browser and not `requests`?
 
 Amazon's orders page is heavily JavaScript-rendered. A plain HTTP request returns mostly empty `<div>`s waiting for React to populate them. Playwright drives a real browser engine, lets the page fully render, and then reads the resulting DOM.
 
@@ -23,7 +23,9 @@ Sessions typically last 30+ days. They can expire earlier if:
 - Amazon detects "suspicious activity" (changed IP, etc.)
 - The cookie's TTL elapses
 
-When they expire, the headless run hits a sign-in redirect, fails to find the orders page, and writes JSON with `total_returnable: 0`. Re-run with `--login` to refresh.
+When they expire, the headless run detects the sign-in page and writes JSON with `status: "login_required"` (keeping the last known items, marked `stale`). It exits with code 2, and the Home Assistant "needs attention" automation notifies you. Re-run with `--login` to refresh.
+
+The scraper always uses Brave, in both `--login` (visible) and daily (headless) runs, so Amazon sees the same browser every time, which helps the session last. Playwright's bundled Chromium is never used.
 
 ## Why a separate HTTP server instead of HA reading the file directly?
 
@@ -36,7 +38,7 @@ If HA and the scraper run on different machines (the typical case), HA needs net
 | Shared NFS/Samba mount | Filesystem coupling between hosts |
 | **HTTP file server** | Simplest, no auth needed on trusted LAN, works with HA's built-in `rest:` sensor |
 
-The `python -m http.server` approach has zero dependencies and is one line of systemd config.
+The `python -m http.server --directory data` approach has zero dependencies and is one line of systemd config. It serves **only** `data/`. Earlier versions served the whole project folder, which exposed the `amazon_session/` cookies to the LAN.
 
 ## Security model
 
@@ -54,5 +56,6 @@ Three reasons:
 ## Limitations
 
 - **US-only by default.** The regex matches English month names. Localizing for other Amazon storefronts requires updating the date pattern in `EXTRACTION_JS`.
+- **Pagination** reads up to `--max-pages` pages (10 orders each) and stops at the last page.
 - **No "already returned" tracking.** If you return an item, the script keeps reporting it until Amazon's "Eligible through" text is removed (usually within a day of the return being scanned).
 - **No multi-account support.** One scraper instance = one Amazon account.

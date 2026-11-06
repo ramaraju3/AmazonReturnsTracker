@@ -1,6 +1,6 @@
 # Wayland / X server troubleshooting
 
-If you're running Raspberry Pi OS Trixie (Debian 13) or newer, the desktop is **Wayland**, not X11. Playwright's bundled Chromium is built for X11 and fails to start with:
+If you're running Raspberry Pi OS Trixie (Debian 13) or newer, the desktop is **Wayland**, not X11. When Playwright launches Brave in visible mode (`--login`), it expects X11 and can fail to start with:
 
 ```
 Looks like you launched a headed browser without having a XServer running.
@@ -34,7 +34,7 @@ Test whether the X server is now reachable:
 xset q >/dev/null 2>&1 && echo "X is reachable" || echo "X NOT reachable"
 ```
 
-If "reachable" but Chromium still complains, the X auth cookie isn't being shared with the subprocess. Add yourself to the access list:
+If "reachable" but Brave still complains, the X auth cookie isn't being shared with the subprocess. Add yourself to the access list:
 
 ```bash
 xhost +SI:localuser:$(whoami)
@@ -45,7 +45,7 @@ Then retry:
 ```bash
 cd ~/amazon-returns
 source venv/bin/activate
-python scripts/amazon_returns_pi.py --login
+python scripts/amazon_returns.py --login
 ```
 
 ## Notes

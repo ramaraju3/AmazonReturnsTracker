@@ -4,26 +4,33 @@
 type: markdown
 title: Amazon Returns
 content: |
-  {% set urgent = state_attr('sensor.amazon_returns_urgent', 'urgent_items') %}
-  {% set all_items = state_attr('sensor.amazon_returns_urgent', 'all_items') %}
-  {% set updated = state_attr('sensor.amazon_returns_urgent', 'updated_at') %}
+  {% set status = states('sensor.amazon_returns_status') %}
+  {% set urgent = state_attr('sensor.amazon_returns_urgent', 'urgent_items') or [] %}
+  {% set all_items = state_attr('sensor.amazon_returns_urgent', 'all_items') or [] %}
+  {% set last = state_attr('sensor.amazon_returns_status', 'last_success') %}
 
-  {% if urgent and urgent | length > 0 %}
+  {% if status == 'login_required' %}
+  <ha-alert alert-type="error">Amazon login expired. Run <code>amazon_returns.py --login</code> on the scraper.</ha-alert>
+  {% elif status == 'error' %}
+  <ha-alert alert-type="warning">Scraper error: {{ state_attr('sensor.amazon_returns_status', 'error') }}</ha-alert>
+  {% elif status in ['unavailable', 'unknown'] %}
+  <ha-alert alert-type="warning">Can't reach the scraper.</ha-alert>
+  {% endif %}
+
+  {% if urgent | length > 0 %}
   ## ⚠️ Due soon
   {% for item in urgent %}
-  - **{{ item.days_left }}d left** — {{ item.title[:80] }}
+  - **{{ 'TODAY' if item.days_left == 0 else item.days_left ~ 'd left' }}** — [{{ item.title[:80] }}]({{ item.order_url or 'https://www.amazon.com/your-orders/orders' }})
   {% endfor %}
 
   ---
   {% endif %}
 
-  ### Returnable items ({{ all_items | length if all_items else 0 }})
-  {% if all_items %}
+  ### Returnable items ({{ all_items | length }})
   {% for item in all_items %}
-  - **{{ item.days_left }}d** — {{ item.title[:70] }}
-  {% endfor %}
+  - **{{ item.days_left }}d** ({{ as_datetime(item.return_by).strftime('%b %-d') }}) — [{{ item.title[:70] }}]({{ item.order_url or 'https://www.amazon.com/your-orders/orders' }})
   {% else %}
   *None.*
-  {% endif %}
+  {% endfor %}
 
-  *Updated {{ updated or 'never' }}*
+  *Last successful check: {{ as_timestamp(last) | timestamp_custom('%b %-d, %-I:%M %p') if last else 'never' }}*

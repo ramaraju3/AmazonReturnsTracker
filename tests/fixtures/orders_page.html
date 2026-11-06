@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!-- Simplified copy of the structure of amazon.com/your-orders/orders, used to
+     test EXTRACTION_JS. Covers: image links with no text, "Buy it again" links,
+     dates in their own <span>, multi-item orders with different return dates,
+     digital order IDs, and an order whose return window has closed. -->
+<html><body>
+<div class="your-orders-content-container">
+
+  <!-- Order 1: single item, image link first (no text) -->
+  <div class="order-card">
+    <div class="order-header">
+      <span>ORDER PLACED</span> <span>October 8, 2026</span>
+      <span>ORDER # 112-1234567-1234567</span>
+    </div>
+    <div class="delivery-box">
+      <div class="item-box">
+        <a href="/dp/B0AAAAAAA1?ref=img"><img alt="" src="x.jpg"></a>
+        <div class="yohtmlc-product-title"><a href="/dp/B0AAAAAAA1">Anker USB-C Charger 65W</a></div>
+        <span class="a-size-small">Return or replace items: Eligible through November 7, 2026</span>
+        <a href="/gp/buyagain?ats=1&asin=B0AAAAAAA1">Buy it again</a>
+        <a href="/dp/B0AAAAAAA1">View your item</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order 2: two items, each with its own date, date in a separate span -->
+  <div class="order-card">
+    <div class="order-header"><span>ORDER # 113-7654321-7654321</span></div>
+    <div class="delivery-box">
+      <div class="item-box">
+        <a href="/dp/B0BBBBBBB2"><img src="y.jpg"></a>
+        <a class="a-link-normal" href="/gp/product/B0BBBBBBB2">Logitech MX Master 3S Mouse</a>
+        <div><span>Return items: Eligible through</span> <span>December 1, 2026</span></div>
+      </div>
+      <div class="item-box">
+        <a href="/dp/B0CCCCCCC3"><img src="z.jpg"></a>
+        <a class="a-link-normal" href="/dp/B0CCCCCCC3">Hydro Flask 32 oz Water Bottle</a>
+        <div>Return items: Eligible through December 3, 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order 3: digital order ID, abbreviated month -->
+  <div class="order-card">
+    <div class="order-header"><span>ORDER # D01-1111111-2222222</span></div>
+    <div class="item-box">
+      <a href="/dp/B0DDDDDDD4">Kindle Paperwhite Case</a>
+      <div>Returnable through Nov 20, 2026</div>
+    </div>
+  </div>
+
+  <!-- Order 4: window closed -> must be ignored -->
+  <div class="order-card">
+    <div class="order-header"><span>ORDER # 114-0000000-0000001</span></div>
+    <div class="item-box">
+      <a href="/dp/B0EEEEEEE5">Old Desk Lamp</a>
+      <div>Return window closed on Aug 1, 2026</div>
+    </div>
+  </div>
+
+</div>
+<ul class="a-pagination">
+  <li class="a-normal"><a href="?startIndex=0">1</a></li>
+  <li class="a-last"><a href="?startIndex=10">Next&rarr;</a></li>
+</ul>
+</body></html>
