@@ -16,6 +16,7 @@ rest:
           - urgent_count
           - total_returnable
           - next_deadline
+          - threshold_days
           - urgent_items
           - all_items
       - name: "Amazon Returns Total"

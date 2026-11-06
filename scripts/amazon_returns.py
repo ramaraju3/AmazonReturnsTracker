@@ -30,6 +30,7 @@ import shutil
 import sys
 import tempfile
 import time
+import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 
@@ -173,7 +174,9 @@ def build_items(hits, today=None):
         seen.add(key)
         order_id = h.get("order_id", "")
         items.append({
-            "title": h.get("title", "(title not found)"),
+            # NFKC turns the "fancy" bold/italic Unicode letters some sellers use
+            # (e.g. "𝟐𝟎𝟐𝟔 𝐔𝐩𝐠𝐫𝐚𝐝𝐞𝐝") into plain text.
+            "title": unicodedata.normalize("NFKC", h.get("title") or "(title not found)").strip(),
             "return_by": d.isoformat(),
             "days_left": (d - today).days,
             "order_id": order_id,
