@@ -424,10 +424,13 @@ def scrape(args):
                 result = page.evaluate(EXTRACTION_JS)
                 if not result["orderIds"] and is_bot_check(page.content()):
                     save_debug(page, debug_dir, "bot-check")
-                    raise BotCheck(
+                    err = BotCheck(
                         "Amazon showed an \"I am human\" check instead of your orders, "
                         "usually after many visits in a short time. Keeping the last "
                         "good data; the next daily run will try again.")
+                    # Pages read before the check are still good; main() keeps them.
+                    err.hits, err.pages, err.orders = all_hits, pages, seen_orders
+                    raise err
                 pages += 1
                 new_orders = set(result["orderIds"]) - seen_orders
                 log(f"  {len(result['hits'])} returnable entries, {len(result['orderIds'])} orders on page")
@@ -489,8 +492,25 @@ def main(argv=None):
         code = 0
     except BotCheck as e:
         log(f"ERROR: {e}")
-        output = build_output("error", [], args.threshold, error=str(e), previous=previous)
-        code = 3
+        if e.pages:
+            # Fresh items from the pages that loaded, plus previous items from
+            # orders on pages we didn't reach this time.
+            today = date.today()
+            fresh = build_items(e.hits)
+            # Some items have no order ID, so also match on ASIN/title + date.
+            fresh_keys = {(i["asin"] or i["title"], i["return_by"]) for i in fresh}
+            kept = [dict(it, days_left=(date.fromisoformat(it["return_by"]) - today).days)
+                    for it in (previous or {}).get("all_items", [])
+                    if it.get("order_id") not in e.orders
+                    and (it.get("asin") or it["title"], it["return_by"]) not in fresh_keys]
+            items = sorted(fresh + kept, key=lambda r: (r["days_left"], r["title"]))
+            output = build_output("ok", items, args.threshold, pages=e.pages)
+            output["partial"] = True
+            output["error"] = f"Partial: read {e.pages} page(s) before Amazon's \"I am human\" check."
+            code = 0
+        else:
+            output = build_output("error", [], args.threshold, error=str(e), previous=previous)
+            code = 3
     except LoginRequired as e:
         log(f"ERROR: {e}")
         output = build_output("login_required", [], args.threshold, error=str(e), previous=previous)
